@@ -2,23 +2,14 @@ Source: vrpn
 Section: libs
 Priority: extra
 Maintainer: Andreas Roth <aroth@arsoft-online.com>
-Build-Depends: debhelper (>= 7), cmake
+Build-Depends: debhelper (>= 7), cmake, libusb-1.0-0-dev
 Standards-Version: 3.9.5
 Homepage: http://www.cs.unc.edu/Research/vrpn/
 
-Package: libquat-dev
+Package: libvrpn
 Section: libdevel
 Architecture: i386 amd64 armel ia64
-Depends: ${misc:Depends}
-Description: Quaternion library
- quatlib is a library of routines that implements a grab-bag of
- useful routines for dealing with quaternions, vectors, and
- matrices.  See the quatlib man page for an overview.
-
-Package: libvrpn-dev
-Section: libdevel
-Architecture: i386 amd64 armel ia64
-Depends: libquat-dev, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Virtual Reality Peripheral Network
  The Virtual-Reality Peripheral Network (VRPN) is a set of classes within
  a library and a set of servers that are designed to implement a
@@ -48,11 +39,27 @@ Description: Virtual Reality Peripheral Network
  client-side class to read values from the device and control its
  operation.
 
+Package: libquat-dev
+Section: libdevel
+Architecture: i386 amd64 armel ia64
+Depends: libvrpn (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Quaternion library - development
+ quatlib is a library of routines that implements a grab-bag of
+ useful routines for dealing with quaternions, vectors, and
+ matrices.  See the quatlib man page for an overview.
+
+Package: libvrpn-dev
+Section: libdevel
+Architecture: i386 amd64 armel ia64
+Depends: libvrpn (= ${binary:Version}), libquat-dev, ${shlibs:Depends}, ${misc:Depends}
+Description: Virtual Reality Peripheral Network - development
+ This package includes the development support files.
+
 Package: libvrpn-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: libvrpn-dev (= ${binary:Version}), ${misc:Depends}
+Depends: libvrpn (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: debug symbols for libquat and libvrpn
  This package includes debugging symbols for use
  when debugging applications which use vrpn.

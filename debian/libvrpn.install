@@ -1,0 +1,4 @@
+usr/lib/libvrpn.so.*
+usr/lib/libvrpnserver.so.*
+usr/lib/libvrpn_atmel.so.*
+usr/lib/libvrpn_timecode_generator.so.*

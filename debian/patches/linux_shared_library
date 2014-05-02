@@ -1,0 +1,302 @@
+--- a/atmellib/CMakeLists.txt
++++ b/atmellib/CMakeLists.txt
+@@ -10,7 +10,7 @@
+ 	vrpn_atmellib_register.C
+ 	vrpn_atmellib_tester.C)
+ 
+-add_library(vrpn_atmel ${ATMELLIB_PUBLIC_HEADERS} ${ATMELLIB_SOURCES})
++add_library(vrpn_atmel ${VRPN_LIBRARY_BUILD_TYPE} ${ATMELLIB_PUBLIC_HEADERS} ${ATMELLIB_SOURCES})
+ set_property(TARGET
+ 	vrpn_atmel
+ 	PROPERTY
+@@ -21,6 +21,16 @@
+ 	PROPERTY
+ 	FOLDER
+ 	"Library")
++set_property(TARGET
++    vrpn_atmel
++    PROPERTY
++    VERSION
++    ${VRPN_VERSION})
++set_property(TARGET
++    vrpn_atmel
++    PROPERTY
++    SOVERSION
++    ${VRPN_SOVERSION})
+ 
+ install(TARGETS
+ 	vrpn_atmel
+@@ -29,6 +39,11 @@
+ 	lib
+ 	COMPONENT
+ 	serversdk
++    LIBRARY
++    DESTINATION
++    lib
++    COMPONENT
++    serversdk
+ 	PUBLIC_HEADER
+ 	DESTINATION
+ 	include
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -394,7 +394,7 @@
+ 
+ if(VRPN_USE_LIBUSB_1_0)
+ 	include_directories(${LIBUSB1_INCLUDE_DIRS})
+-	list(APPEND SERVER_EXTRA_LIBS ${LIBUSB1_LIBRARIES})
++	list(APPEND SERVER_EXTRA_LIBS ${LIBUSB1_LIBRARY})
+ endif()
+ 
+ 
+@@ -786,6 +786,15 @@
+ 	option(VRPN_USE_SHARED_LIBRARY
+ 		"Enable to use DLLs on Windows (see vrpn_Configure.h for more info)"
+ 		OFF)
++else()
++    option(VRPN_USE_SHARED_LIBRARY
++        "Enable to use shared library on Linux (see vrpn_Configure.h for more info)"
++        OFF)
++endif()
++
++if(NOT WIN32 AND VRPN_USE_SHARED_LIBRARY)
++    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -Wno-attributes")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -Wno-attributes")
+ endif()
+ 
+ if(UNIX)
+@@ -1108,8 +1117,15 @@
+ set(VRPN_SERVER_LIBRARY)
+ set(VRPN_CLIENT_LIBRARY)
+ 
++if(VRPN_USE_SHARED_LIBRARY)
++    set(VRPN_LIBRARY_BUILD_TYPE SHARED)
++else()
++    set(VRPN_LIBRARY_BUILD_TYPE STATIC)
++endif()
++
+ if(VRPN_BUILD_SERVER_LIBRARY)
+ 	add_library(vrpnserver
++        ${VRPN_LIBRARY_BUILD_TYPE}
+ 		${VRPN_SERVER_SOURCES}
+ 		${VRPN_SERVER_PUBLIC_HEADERS})
+ 	target_link_libraries(vrpnserver ${EXTRA_LIBS} ${SERVER_EXTRA_LIBS})
+@@ -1130,6 +1146,16 @@
+ 		PROPERTY
+ 		FOLDER
+ 		"Library")
++    set_property(TARGET
++        vrpnserver
++        PROPERTY
++        VERSION
++        ${VRPN_VERSION})
++    set_property(TARGET
++        vrpnserver
++        PROPERTY
++        SOVERSION
++        ${VRPN_SOVERSION})
+ 
+ 	if(UNIX)
+ 		add_subdirectory(atmellib)
+@@ -1146,6 +1172,11 @@
+ 		lib
+ 		COMPONENT
+ 		serversdk
++        LIBRARY
++        DESTINATION
++        lib
++        COMPONENT
++        serversdk
+ 		PUBLIC_HEADER
+ 		DESTINATION
+ 		include
+@@ -1157,7 +1188,7 @@
+ 
+ 
+ if(VRPN_BUILD_CLIENT_LIBRARY)
+-	add_library(vrpn ${VRPN_CLIENT_SOURCES} ${VRPN_CLIENT_PUBLIC_HEADERS})
++	add_library(vrpn ${VRPN_LIBRARY_BUILD_TYPE} ${VRPN_CLIENT_SOURCES} ${VRPN_CLIENT_PUBLIC_HEADERS})
+ 	target_link_libraries(vrpn ${EXTRA_LIBS})
+ 	set(VRPN_CLIENT_LIBRARY vrpn)
+ 
+@@ -1184,6 +1215,16 @@
+ 		PROPERTY
+ 		FOLDER
+ 		"Library")
++    set_property(TARGET
++        vrpn
++        PROPERTY
++        VERSION
++        ${VRPN_VERSION})
++    set_property(TARGET
++        vrpn
++        PROPERTY
++        SOVERSION
++        ${VRPN_SOVERSION})
+ 
+ 	install(TARGETS
+ 		vrpn
+@@ -1192,6 +1233,11 @@
+ 		lib
+ 		COMPONENT
+ 		clientsdk
++        LIBRARY
++        DESTINATION
++        lib
++        COMPONENT
++        clientsdk
+ 		PUBLIC_HEADER
+ 		DESTINATION
+ 		include
+--- a/vrpn_Configure.h.cmake_in
++++ b/vrpn_Configure.h.cmake_in
+@@ -526,8 +526,12 @@
+ #endif
+ #define	 VRPN_CALLBACK	 __stdcall
+ #else
++#if defined(__GNUC__) && defined(VRPN_USE_SHARED_LIBRARY)
++#define  VRPN_API __attribute__ ((visibility ("default")))
++#else
+ // In the future, other architectures may need their own sections
+ #define  VRPN_API
++#endif
+ #define  VRPN_CALLBACK
+ #endif
+ 
+--- a/atmellib/vrpn_atmellib.h
++++ b/atmellib/vrpn_atmellib.h
+@@ -26,6 +26,16 @@
+ /* includes, project */
+ #include "vrpn_atmellib_errno.h"
+ 
++#if defined(vrpn_atmel_EXPORTS)
++#if defined(__GNUC__)
++#define  VRPN_ATMELLIB_API __attribute__ ((visibility ("default")))
++#else
++#define  VRPN_ATMELLIB_API
++#endif
++#else
++#define  VRPN_ATMELLIB_API
++#endif
++
+ #if defined(__cplusplus)
+ extern "C" {
+ #endif
+@@ -66,17 +76,17 @@
+ for the communication with the microcontroller 
+ CAUTION: the return value is a program specific file handler and not the
+       system file handler */
+-extern handle_t openPort(const char*i, const int baud, struct termios * init_param);
++VRPN_ATMELLIB_API extern handle_t openPort(const char*i, const int baud, struct termios * init_param);
+ 
+ /* close the specified port and reset all parameters */
+-extern error_t closePort (handle_t, struct termios * init_param);
++VRPN_ATMELLIB_API extern error_t closePort (handle_t, struct termios * init_param);
+ 
+ /* checks if the given file handler is valid: returns 1 (true) if the handle is invalid otherwise
+ return 0 (false) */ 
+-extern error_t handle_invalid (int); 
++VRPN_ATMELLIB_API extern error_t handle_invalid (int);
+ 
+ /* checks if the register is valid */
+-extern error_t register_invalid( unsigned char );
++VRPN_ATMELLIB_API extern error_t register_invalid( unsigned char );
+ 
+ 
+ /*************************************************************************************************/
+@@ -86,17 +96,17 @@
+ /* send one/more command(s) to the microcontroller which don't change the state of it 
+ the return value of the command - i.e. the value of a register - is returned in the 
+ second calling variable */  
+-extern int getCmd (handle_t, struct command_t*);
++VRPN_ATMELLIB_API extern int getCmd (handle_t, struct command_t*);
+ 
+ /* send one/more command(s) to the microcontroller which change the state of the microcontrolle */
+-extern int setCmd (int, struct command_t*);
++VRPN_ATMELLIB_API extern int setCmd (int, struct command_t*);
+ 
+ /* set the value of the specified register */
+-extern    error_t    
++VRPN_ATMELLIB_API extern    error_t
+ setRegister( handle_t Hd , const unsigned char Register , const unsigned char Val);
+ 
+ /* get the value of the specified register */
+-extern    int getRegister( handle_t Hd , const unsigned char Register);
++VRPN_ATMELLIB_API extern    int getRegister( handle_t Hd , const unsigned char Register);
+ 
+ #if defined(__cplusplus)
+ } /* extern "C" { */
+--- a/vrpn_Shared.h
++++ b/vrpn_Shared.h
+@@ -587,4 +587,4 @@
+ };
+ 
+ // Returns true if they work and false if they do not.
+-extern bool vrpn_test_threads_and_semaphores(void);
++VRPN_API extern bool vrpn_test_threads_and_semaphores(void);
+--- a/server_src/vrpn_Generic_server_object.h
++++ b/server_src/vrpn_Generic_server_object.h
+@@ -13,7 +13,7 @@
+ class VRPN_API vrpn_TAF_axis;
+ class VRPN_API vrpn_PA_axis;
+ 
+-class vrpn_Generic_Server_Object
++class VRPN_API vrpn_Generic_Server_Object
+ {
+   public:
+     vrpn_Generic_Server_Object (vrpn_Connection *connection_to_use, const char *config_file_name = "vrpn.cfg", int port = vrpn_DEFAULT_LISTEN_PORT_NO, bool be_verbose = false, bool bail_on_open_error = false);
+--- a/server_src/timecode_generator_server/CMakeLists.txt
++++ b/server_src/timecode_generator_server/CMakeLists.txt
+@@ -8,6 +8,7 @@
+ set(TIMECODE_GENSERV_PUBLIC_HEADERS vrpn_timecode_generator.h)
+ 
+ add_library(vrpn_timecode_generator
++    ${VRPN_LIBRARY_BUILD_TYPE}
+ 	${TIMECODE_GENSERV_SOURCES}
+ 	${TIMECODE_GENSERV_PUBLIC_HEADERS})
+ set_property(TARGET
+@@ -21,6 +22,16 @@
+ 	PROPERTIES
+ 	FOLDER
+ 	"Main Server")
++set_property(TARGET
++    vrpn_timecode_generator
++    PROPERTY
++    VERSION
++    ${VRPN_VERSION})
++set_property(TARGET
++    vrpn_timecode_generator
++    PROPERTY
++    SOVERSION
++    ${VRPN_SOVERSION})
+ 
+ install(TARGETS
+ 	vrpn_timecode_generator
+@@ -29,6 +40,11 @@
+ 	lib
+ 	COMPONENT
+ 	serversdk
++    LIBRARY
++    DESTINATION
++    lib
++    COMPONENT
++    serversdk
+ 	PUBLIC_HEADER
+ 	DESTINATION
+ 	include
+--- a/ParseVersion.cmake
++++ b/ParseVersion.cmake
+@@ -32,6 +32,13 @@
+ set(CONFIG_VERSION "${CPACK_PACKAGE_VERSION}")
+ set(BRIEF_VERSION "${CPACK_PACKAGE_VERSION}")
+ 
++# convert the version numbers from strings to int
++math(EXPR _vrpn_major_version "${CPACK_PACKAGE_VERSION_MAJOR} + 0")
++math(EXPR _vrpn_minor_version "${CPACK_PACKAGE_VERSION_MINOR} + 0")
++
++set(VRPN_VERSION "${_vrpn_major_version}.${_vrpn_minor_version}")
++set(VRPN_SOVERSION "${_vrpn_major_version}")
++
+ option(BUILD_USE_GIT_VERSION_INFO "Use version info (tag name or SHA1) from git" OFF)
+ if(BUILD_USE_GIT_VERSION_INFO)
+ include(GetGitRevisionDescription)

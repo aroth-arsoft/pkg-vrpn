@@ -1,6 +1,6 @@
 usr/include/vrpn/*
-usr/lib/libvrpn.a
-usr/lib/libvrpnserver.a
-usr/lib/libvrpn_atmel.a
+usr/lib/libvrpn.so
+usr/lib/libvrpnserver.so
+usr/lib/libvrpn_atmel.so
 usr/lib/libgpsnmea.a
-usr/lib/libvrpn_timecode_generator.a
+usr/lib/libvrpn_timecode_generator.so

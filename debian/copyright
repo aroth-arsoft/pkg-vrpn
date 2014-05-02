@@ -1,18 +1,3 @@
-This package was debianized by Andreas Roth <aroth@arsoft-online.com> on
-Thu, 01 May 2014 10:12:21 +0200.
-
-It was downloaded from http://www.cs.unc.edu/Research/vrpn/
-
-Upstream Author(s):
-
-    Russell M. Taylor II <taylorr@cs.unc.edu>
-
-Copyright:
-
-    Copyright (C) Russell M. Taylor II
-
-License:
-
 The initial release of VRPN (The Virtual Reality Peripheral Network) was
 placed into the public domain on 5/4/1998 by the copyright holder
 Russell M. Taylor II at the University of North Carolina at Chapel Hill.
@@ -24,7 +9,7 @@ which is as follows:
 
 Boost Software License 1.0 (BSL1.0)
 
-Permission is hereby granted, free of charge, to any person or 
+Permission is hereby granted, free of charge, to any person or
 organization obtaining a copy of the software and accompanying
 documentation covered by this license (the "Software") to use,
 reproduce, display, distribute, execute, and transmit the Software, and
@@ -43,14 +28,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
 NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
-DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY, 
 WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Additional requests follow:
 
-1. Please acknowledge this library in any publication, written, videotaped,
+1. Please acknowledge this library in any publication, written,
+videotaped,
     or otherwise produced, that results from making programs using it.
     The acknowledgement will credit
 
