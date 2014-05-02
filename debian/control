@@ -1,0 +1,58 @@
+Source: vrpn
+Section: libs
+Priority: extra
+Maintainer: Andreas Roth <aroth@arsoft-online.com>
+Build-Depends: debhelper (>= 7), cmake
+Standards-Version: 3.9.5
+Homepage: http://www.cs.unc.edu/Research/vrpn/
+
+Package: libquat-dev
+Section: libdevel
+Architecture: i386 amd64 armel ia64
+Depends: ${misc:Depends}
+Description: Quaternion library
+ quatlib is a library of routines that implements a grab-bag of
+ useful routines for dealing with quaternions, vectors, and
+ matrices.  See the quatlib man page for an overview.
+
+Package: libvrpn-dev
+Section: libdevel
+Architecture: i386 amd64 armel ia64
+Depends: libquat-dev, ${misc:Depends}
+Description: Virtual Reality Peripheral Network
+ The Virtual-Reality Peripheral Network (VRPN) is a set of classes within
+ a library and a set of servers that are designed to implement a
+ network-transparent interface between application programs and the set
+ of physical devices (tracker, etc.) used in a virtual-reality (VR)
+ system. The idea is to have a PC or other host at each VR station that
+ controls the peripherals (tracker, button device, haptic device, analog
+ inputs, sound, etc). VRPN provides connections between the application
+ and all of the devices using the appropriate class-of-service for each
+ type of device sharing this link. The application remains unaware of the
+ network topology. Note that it is possible to use VRPN with devices that
+ are directly connected to the machine that the application is running
+ on, either using separate control programs or running all as a single
+ program. VRPN also provides an abstraction layer that makes all devices
+ of the same base class look the same; for example, all tracking devices
+ look like they are of the type vrpn_Tracker. This merely means that all
+ trackers produce the same types of reports. At the same time, it is
+ possible for an application that requires access to specialized features
+ of a certain tracking device (for example, telling a certain type of
+ tracker how often to generate reports), to derive a class that
+ communicates with this type of tracker. If this specialized class were
+ used with a tracker that did not understand how to set its update rate,
+ the specialized commands would be ignored by that tracker. The current
+ system types are Analog, Button, Dial, ForceDevice, Sound, Text, and
+ Tracker. Each of these abstract a set of semantics for a certain type of
+ device. There are one or more servers for each type of device, and a
+ client-side class to read values from the device and control its
+ operation.
+
+Package: libvrpn-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: libvrpn-dev (= ${binary:Version}), ${misc:Depends}
+Description: debug symbols for libquat and libvrpn
+ This package includes debugging symbols for use
+ when debugging applications which use vrpn.

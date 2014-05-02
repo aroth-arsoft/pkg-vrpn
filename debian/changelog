@@ -1,0 +1,5 @@
+vrpn (7.31+dfsg-0.1~aroth~ppa1) trusty; urgency=low
+
+  * initial package
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Thu, 01 May 2014 10:12:21 +0200

@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+%:
+	dh --buildsystem=cmake $@
+
+override_dh_auto_configure:
+	dh_auto_configure -O--buildsystem=cmake -- -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+override_dh_install:
+	mkdir -p debian/tmp/usr/include/vrpn
+	mv debian/tmp/usr/include/vrpn_*.h debian/tmp/usr/include/vrpn
+	dh_install
+
+override_dh_strip:
+	dh_strip -O--buildsystem=cmake -s --dbg-package=libvrpn-dbg

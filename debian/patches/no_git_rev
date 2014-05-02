@@ -1,0 +1,17 @@
+--- a/ParseVersion.cmake
++++ b/ParseVersion.cmake
+@@ -32,6 +32,8 @@
+ set(CONFIG_VERSION "${CPACK_PACKAGE_VERSION}")
+ set(BRIEF_VERSION "${CPACK_PACKAGE_VERSION}")
+ 
++option(BUILD_USE_GIT_VERSION_INFO "Use version info (tag name or SHA1) from git" OFF)
++if(BUILD_USE_GIT_VERSION_INFO)
+ include(GetGitRevisionDescription)
+ git_get_exact_tag(GIT_EXACT_TAG --tags --match version_*)
+ if(GIT_EXACT_TAG)
+@@ -92,4 +94,4 @@
+ 			"${CPACK_PACKAGE_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
+ 	endif()
+ endif()
+-
++endif(BUILD_USE_GIT_VERSION_INFO)
