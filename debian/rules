@@ -4,7 +4,7 @@
 	dh --buildsystem=cmake $@
 
 override_dh_auto_configure:
-	dh_auto_configure -O--buildsystem=cmake -- -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVRPN_USE_SHARED_LIBRARY=ON
+	dh_auto_configure -O--buildsystem=cmake -- -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVRPN_USE_SHARED_LIBRARY=ON -DVRPN_USE_HID=ON
 
 override_dh_install:
 	mkdir -p debian/tmp/usr/include/vrpn
