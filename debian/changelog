@@ -1,3 +1,9 @@
+vrpn (7.33+dfsg-0.3~aroth~ppa2) vivid; urgency=medium
+
+  * add Contour Shuttle Pro
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Sat, 29 Aug 2015 17:20:26 +0200
+
 vrpn (7.33+dfsg-0.2~aroth~ppa1) vivid; urgency=medium
 
   * add Contour Shuttle ProV2 from master
