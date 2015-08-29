@@ -12,6 +12,7 @@ Section: libdevel
 Architecture: i386 amd64 armel ia64
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: libvrpn
+Conflicts: libvrpn
 Description: Virtual Reality Peripheral Network
  The Virtual-Reality Peripheral Network (VRPN) is a set of classes within
  a library and a set of servers that are designed to implement a
