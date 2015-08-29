@@ -2,3 +2,8 @@
 *.substvars
 *.debhelper
 /files
+/tmp/
+/libquat-dev/
+/libvrpn-dev/
+/libvrpn7/
+/libvrpn7-dbg/

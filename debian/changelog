@@ -1,3 +1,9 @@
+vrpn (7.33+dfsg-0.2~aroth~ppa1) vivid; urgency=medium
+
+  * add Contour Shuttle ProV2 from master
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Sat, 29 Aug 2015 16:30:35 +0200
+
 vrpn (7.33+dfsg-0.1~aroth~ppa2) vivid; urgency=medium
 
   * conflicts old libvrpn package

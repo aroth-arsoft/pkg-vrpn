@@ -1,0 +1,742 @@
+--- a/vrpn_Contour.C
++++ b/vrpn_Contour.C
+@@ -14,6 +14,7 @@
+ // USB vendor and product IDs for the models we support
+ static const vrpn_uint16 CONTOUR_VENDOR = 0x0b33;
+ static const vrpn_uint16 CONTOUR_SHUTTLEXPRESS = 0x0020;
++static const vrpn_uint16 CONTOUR_SHUTTLEPROV2 = 0x0030;
+ 
+ static void normalize_axis(const unsigned int value, const short deadzone, const vrpn_float64 scale, vrpn_float64& channel) {
+ 	channel = (static_cast<float>(value) - 128.0f);
+@@ -30,17 +31,16 @@
+ 	if (channel > 1.0) { channel = 1.0; }
+ }
+ 
+-static void normalize_axes(const unsigned int x, const unsigned int y, const short deadzone, const vrpn_float64 scale, vrpn_float64& channelX, vrpn_float64& channelY) {
+-	normalize_axis(x, deadzone, scale, channelX);
+-	normalize_axis(y, deadzone, scale, channelY);
+-}
+-
+-vrpn_Contour::vrpn_Contour(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c)
+-  : vrpn_HidInterface(filter)
+-  , vrpn_BaseClass(name, c)
++vrpn_Contour::vrpn_Contour(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c,
++    vrpn_uint16 vendor, vrpn_uint16 product)
++  : vrpn_BaseClass(name, c)
++  , vrpn_HidInterface(filter, vendor, product)
+   , _filter(filter)
+ {
+ 	init_hid();
++
++	// We've not yet gotten a dial response.
++	_gotDial = false;
+ }
+ 
+ vrpn_Contour::~vrpn_Contour(void)
+@@ -59,25 +59,23 @@
+   decodePacket(bytes, buffer);
+ }
+ 
+-int vrpn_Contour::on_last_disconnect(void *thisPtr, vrpn_HANDLERPARAM /*p*/)
++int vrpn_Contour::on_last_disconnect(void* /*thisPtr*/, vrpn_HANDLERPARAM /*p*/)
+ {
+-	vrpn_Contour *me = static_cast<vrpn_Contour *>(thisPtr);
+ 	return 0;
+ }
+ 
+-int vrpn_Contour::on_connect(void *thisPtr, vrpn_HANDLERPARAM /*p*/)
++int vrpn_Contour::on_connect(void* /*thisPtr*/, vrpn_HANDLERPARAM /*p*/)
+ {
+-	vrpn_Contour *me = static_cast<vrpn_Contour *>(thisPtr);
+ 	return 0;
+ }
+ 
+ vrpn_Contour_ShuttleXpress::vrpn_Contour_ShuttleXpress(const char *name, vrpn_Connection *c)
+-  : vrpn_Contour(_filter = new vrpn_HidProductAcceptor(CONTOUR_VENDOR, CONTOUR_SHUTTLEXPRESS), name, c)
+-  , vrpn_Button_Filter(name, c)
++    : vrpn_Contour(_filter = new vrpn_HidProductAcceptor(CONTOUR_VENDOR, CONTOUR_SHUTTLEXPRESS), name, c, CONTOUR_VENDOR, CONTOUR_SHUTTLEXPRESS)
+   , vrpn_Analog(name, c)
++  , vrpn_Button_Filter(name, c)
+   , vrpn_Dial(name, c)
+ {
+-  vrpn_Analog::num_channel = 1;
++  vrpn_Analog::num_channel = 2;
+   vrpn_Dial::num_dials = 1;
+   vrpn_Button::num_buttons = 5;
+ 
+@@ -158,7 +156,7 @@
+ 
+ 	if (vrpn_Analog::num_channel > 0)
+ 	{
+-		vrpn_Analog::report(class_of_service);
++		vrpn_Analog::report_changes(class_of_service);
+ 	}
+ 	if (vrpn_Button::num_buttons > 0)
+ 	{
+@@ -166,7 +164,7 @@
+ 	}
+ 	if (vrpn_Dial::num_dials > 0)
+ 	{
+-		vrpn_Dial::report();
++		vrpn_Dial::report_changes();
+ 	}
+ }
+ 
+@@ -174,23 +172,19 @@
+ 	// Decode all full reports, each of which is 5 bytes long.
+         // Because there is only one type of report, the initial "0" report-type
+         // byte is removed by the HIDAPI driver.
+-	// XXX Check to see that this works with HIDAPI, there may be two smaller reports.
+ 	if (bytes == 5) {
+-		// analog (1st byte): 0 center, 1..7 right, -1..-7 left
+-		normalize_axis((unsigned int) ((static_cast<float>(static_cast<vrpn_int8>(buffer[0])) * 128.0f / 7.0f) + 128.0f), 0, 1.0f, channel[0]);
+-
+-		if (vrpn_Dial::num_dials > 0)
+-		{
+-			// dial (2nd byte)
+-			// Do the unsigned/signed conversion at the last minute so the signed values work properly.
+-			dials[0] = static_cast<vrpn_int8>(buffer[1] - _lastDial);
+-			_lastDial = buffer[1];
++		if (!_gotDial) {
++			_gotDial = true;
+ 		}
+-		else
+-		{
+-			// dial (2nd byte)
+-			normalize_axis((unsigned int) (static_cast<float>(static_cast<vrpn_int8>(buffer[1])) + 128.0f), 0, 1.0f, channel[1]);
++		else {
++			dials[0] = static_cast<vrpn_int8>(buffer[1] - _lastDial) / 10.0;
+ 		}
++		_lastDial = buffer[1];
++
++		// analog (1st byte): 0 center, 1..7 right, -1..-7 left
++		normalize_axis((unsigned int)((static_cast<float>(static_cast<vrpn_int8>(buffer[0])) * 128.0f / 7.0f) + 128.0f), 0, 1.0f, channel[0]);
++		// Second analog integrates the dial value.
++		channel[1] += dials[0];
+ 
+ 		vrpn_uint8 value;
+ 		// buttons (4th byte):
+@@ -210,5 +204,155 @@
+ 	}
+ }
+ 
++
++vrpn_Contour_ShuttlePROv2::vrpn_Contour_ShuttlePROv2(const char *name, vrpn_Connection *c)
++    : vrpn_Contour(_filter = new vrpn_HidProductAcceptor(CONTOUR_VENDOR, CONTOUR_SHUTTLEPROV2), name, c, CONTOUR_VENDOR, CONTOUR_SHUTTLEPROV2)
++	, vrpn_Analog(name, c)
++	, vrpn_Button_Filter(name, c)
++	, vrpn_Dial(name, c)
++{
++	vrpn_Analog::num_channel = 2;
++	vrpn_Dial::num_dials = 1;
++	vrpn_Button::num_buttons = 15;
++
++	// Initialize the state of all the analogs, buttons, and dials
++	_lastDial = 0;
++	memset(buttons, 0, sizeof(buttons));
++	memset(lastbuttons, 0, sizeof(lastbuttons));
++	memset(channel, 0, sizeof(channel));
++	memset(last, 0, sizeof(last));
++}
++
++void vrpn_Contour_ShuttlePROv2::mainloop(void)
++{
++	update();
++	server_mainloop();
++	struct timeval current_time;
++	vrpn_gettimeofday(&current_time, NULL);
++	if (vrpn_TimevalDuration(current_time, _timestamp) > POLL_INTERVAL) {
++		_timestamp = current_time;
++		report_changes();
++
++		if (vrpn_Analog::num_channel > 0)
++		{
++			vrpn_Analog::server_mainloop();
++		}
++		if (vrpn_Button::num_buttons > 0)
++		{
++			vrpn_Button::server_mainloop();
++		}
++		if (vrpn_Dial::num_dials > 0)
++		{
++			vrpn_Dial::server_mainloop();
++		}
++	}
++}
++
++void vrpn_Contour_ShuttlePROv2::report(vrpn_uint32 class_of_service)
++{
++	if (vrpn_Analog::num_channel > 0)
++	{
++		vrpn_Analog::timestamp = _timestamp;
++	}
++	if (vrpn_Button::num_buttons > 0)
++	{
++		vrpn_Button::timestamp = _timestamp;
++	}
++	if (vrpn_Dial::num_dials > 0)
++	{
++		vrpn_Dial::timestamp = _timestamp;
++	}
++
++	if (vrpn_Analog::num_channel > 0)
++	{
++		vrpn_Analog::report(class_of_service);
++	}
++	if (vrpn_Button::num_buttons > 0)
++	{
++		vrpn_Button::report_changes();
++	}
++	if (vrpn_Dial::num_dials > 0)
++	{
++		vrpn_Dial::report();
++	}
++}
++
++void vrpn_Contour_ShuttlePROv2::report_changes(vrpn_uint32 class_of_service)
++{
++	if (vrpn_Analog::num_channel > 0)
++	{
++		vrpn_Analog::timestamp = _timestamp;
++	}
++	if (vrpn_Button::num_buttons > 0)
++	{
++		vrpn_Button::timestamp = _timestamp;
++	}
++	if (vrpn_Dial::num_dials > 0)
++	{
++		vrpn_Dial::timestamp = _timestamp;
++	}
++
++	if (vrpn_Analog::num_channel > 0)
++	{
++		vrpn_Analog::report_changes(class_of_service);
++	}
++	if (vrpn_Button::num_buttons > 0)
++	{
++		vrpn_Button::report_changes();
++	}
++	if (vrpn_Dial::num_dials > 0)
++	{
++		vrpn_Dial::report_changes();
++	}
++}
++
++void vrpn_Contour_ShuttlePROv2::decodePacket(size_t bytes, vrpn_uint8 *buffer)
++{
++	// Print the report so we can figure out what is going on.
++/*	for (size_t i = 0; i < bytes; i++) {
++	printf("%02x ", buffer[i]);
++	}
++	printf("\n");
++	return; */
++
++	// Decode all full reports, each of which is 5 bytes long.
++	// Because there is only one type of report, the initial "0" report-type
++	// byte is removed by the HIDAPI driver.
++	if (bytes == 5) {
++		if (!_gotDial) {
++			_gotDial = true;
++		}
++		else {
++			dials[0] = static_cast<vrpn_int8>(buffer[1] - _lastDial) / 10.0;
++		}
++		_lastDial = buffer[1];
++
++		// analog (1st byte): 0 center, 1..7 right, -1..-7 left
++		normalize_axis((unsigned int)((static_cast<float>(static_cast<vrpn_int8>(buffer[0])) * 128.0f / 7.0f) + 128.0f), 0, 1.0f, channel[0]);
++		// Second analog integrates the dial value.
++		channel[1] += dials[0];
++
++		// Top row of four buttons, from left to right: index[bit]
++		//   3[0], 3[1], 3[2], 3[3]
++		// Second row of 5 buttons, from left to right:
++		//   3[4], 3[5], 3[6], 3[7], 4[0]
++		// Four lower buttons, from left to right and then down to next row:
++		//   4[1], 4[2], 4[3], 4[4]
++		// Two black buttons, from left to right:
++		//   4[5], 4[6]
++		for (int btn = 0; btn <= 15; btn++) {
++			vrpn_uint8 *offset, mask;
++
++			offset = buffer + btn / 8 + 3;
++			mask = static_cast<vrpn_uint8>(1 << (btn % 8));
++
++			buttons[btn] = (*offset & mask) != 0;
++		}
++	}
++	else {
++		fprintf(stderr, "vrpn_Contour_ShuttlePROv2: Found a corrupted report; # total bytes = %u\n", static_cast<unsigned>(bytes));
++	}
++}
++
+ // End of VRPN_USE_HID
+ #endif
+--- a/vrpn_Contour.h
++++ b/vrpn_Contour.h
+@@ -19,12 +19,12 @@
+ //
+ // Exposes three major VRPN device classes: Button, Analog, Dial (as appropriate).
+ // All models expose Buttons for the keys on the device.
+-// Button 0 is the programming switch; it is set if the switch is in the "red" position.
+ //
+ 
+ class vrpn_Contour: public vrpn_BaseClass, protected vrpn_HidInterface {
+ public:
+-  vrpn_Contour(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c = 0);
++  vrpn_Contour(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c = 0,
++      vrpn_uint16 vendor = 0, vrpn_uint16 product = 0);
+   virtual ~vrpn_Contour(void);
+ 
+   virtual void mainloop(void) = 0;
+@@ -43,6 +43,13 @@
+ 
+   // No actual types to register, derived classes will be buttons, analogs, and/or dials
+   int register_types(void) { return 0; }
++
++  // Have we gotten a dial response yet?  If not, we store the value
++  // rather than reporting it.
++  bool _gotDial;
++
++  // Previous dial value, used to determine delta to send when it changes.
++  vrpn_uint8 _lastDial;
+ };
+ 
+ class vrpn_Contour_ShuttleXpress: protected vrpn_Contour, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
+@@ -59,13 +66,30 @@
+   void report (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
+ 
+   void decodePacket(size_t bytes, vrpn_uint8 *buffer);
++};
+ 
+-  // Previous dial value, used to determine delta to send when it changes.
+-  vrpn_uint8 _lastDial;
++class vrpn_Contour_ShuttlePROv2 : protected vrpn_Contour, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
++public:
++	vrpn_Contour_ShuttlePROv2(const char *name, vrpn_Connection *c = 0);
++	virtual ~vrpn_Contour_ShuttlePROv2(void) {};
++
++	virtual void mainloop(void);
++
++protected:
++	// Send report iff changed
++	void report_changes(vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
++	// Send report whether or not changed
++	void report(vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
++
++	void decodePacket(size_t bytes, vrpn_uint8 *buffer);
++
++	// Previous dial value, used to determine delta to send when it changes.
++	vrpn_uint8 _lastDial;
+ };
+ 
+ // end of VRPN_USE_HID
+ #else
+ class VRPN_API vrpn_Contour;
+ class VRPN_API vrpn_Contour_ShuttleXpress;
++class VRPN_API vrpn_Contour_ShuttlePROv2;
+ #endif
+--- a/vrpn_HumanInterface.C
++++ b/vrpn_HumanInterface.C
+@@ -11,41 +11,48 @@
+ #endif
+ 
+ // Accessor for USB vendor ID of connected device
+-vrpn_uint16 vrpn_HidInterface::vendor() const { return _vendor; }
++vrpn_uint16 vrpn_HidInterface::vendor() const { return m_vendor; }
+ 
+ // Accessor for USB product ID of connected device
+-vrpn_uint16 vrpn_HidInterface::product() const { return _product; }
++vrpn_uint16 vrpn_HidInterface::product() const { return m_product; }
+ 
+ // Accessor for USB interface number of connected device
+-int vrpn_HidInterface::interface_number() const { return _interface; }
++int vrpn_HidInterface::interface_number() const { return m_interface; }
+ 
+ // Returns true iff everything was working last time we checked
+-bool vrpn_HidInterface::connected() const { return _working; }
++bool vrpn_HidInterface::connected() const { return m_working; }
+ 
+-vrpn_HidInterface::vrpn_HidInterface(vrpn_HidAcceptor *acceptor)
+-    : _acceptor(acceptor)
+-    , _device(NULL)
+-    , _working(false)
+-    , _vendor(0)
+-    , _product(0)
+-    , _interface(0)
+-{
+-    if (_acceptor == NULL) {
++vrpn_HidInterface::vrpn_HidInterface(vrpn_HidAcceptor *acceptor
++    , vrpn_uint16 vendor
++    , vrpn_uint16 product
++    )
++    : m_acceptor(acceptor)
++{
++    // Move initialization inside function so it happens in the order specified.
++    m_device = NULL;
++    m_working = false;
++    m_vendor = 0;
++    m_product = 0;
++    m_interface = 0;
++    m_vendor_sought = vendor;
++    m_product_sought = product;
++
++    if (m_acceptor == NULL) {
+         fprintf(stderr,
+                 "vrpn_HidInterface::vrpn_HidInterface(): NULL acceptor\n");
+         return;
+     }
+ 
+     // Reset the acceptor and then attempt to connect to a device.
+-    _acceptor->reset();
++    m_acceptor->reset();
+     reconnect();
+ }
+ 
+ vrpn_HidInterface::~vrpn_HidInterface()
+ {
+-    if (_device) {
+-        hid_close(_device);
+-        _device = NULL;
++    if (m_device) {
++        hid_close(m_device);
++        m_device = NULL;
+     }
+ }
+ 
+@@ -56,7 +63,7 @@
+ {
+     // Enumerate all devices and pass each one to the acceptor to see if it
+     // is the one that we want.
+-    struct hid_device_info *devs = hid_enumerate(0, 0);
++    struct hid_device_info *devs = hid_enumerate(m_vendor_sought, m_product_sought);
+     struct hid_device_info *loop = devs;
+     bool found = false;
+     const wchar_t *serial;
+@@ -73,10 +80,10 @@
+         // (unsigned)(loop->vendor_id), (unsigned)(loop->product_id),
+         // (int)(loop->interface_number) );
+ 
+-        if (_acceptor->accept(device_info)) {
+-            _vendor = loop->vendor_id;
+-            _product = loop->product_id;
+-            _interface = loop->interface_number;
++        if (m_acceptor->accept(device_info)) {
++            m_vendor = loop->vendor_id;
++            m_product = loop->product_id;
++            m_interface = loop->interface_number;
+             serial = loop->serial_number;
+             path = loop->path;
+             found = true;
+@@ -84,22 +91,23 @@
+             fprintf(stderr, "vrpn_HidInterface::reconnect(): Found %ls %ls "
+                             "(%04hx:%04hx) at path %s - will attempt to "
+                             "open.\n",
+-                    loop->manufacturer_string, loop->product_string, _vendor,
+-                    _product, loop->path);
++                            loop->manufacturer_string, loop->product_string, m_vendor,
++                            m_product, loop->path);
+ #endif
+         }
+         loop = loop->next;
+     }
+     if (!found) {
+-        fprintf(stderr, "vrpn_HidInterface::reconnect(): Device not found\n");
++        //fprintf(stderr, "vrpn_HidInterface::reconnect(): Device not found\n");
+         hid_free_enumeration(devs);
+         devs = NULL;
+         return false;
+     }
+ 
++
+     // Initialize the HID interface and open the device.
+-    _device = hid_open_path(path);
+-    if (_device == NULL) {
++    m_device = hid_open_path(path);
++    if (m_device == NULL) {
+         fprintf(stderr,
+                 "vrpn_HidInterface::reconnect(): Could not open device %s\n",
+                 path);
+@@ -120,7 +128,7 @@
+     }
+ 
+     // Set the device to non-blocking mode.
+-    if (hid_set_nonblocking(_device, 1) != 0) {
++    if (hid_set_nonblocking(m_device, 1) != 0) {
+         fprintf(stderr, "vrpn_HidInterface::reconnect(): Could not set device "
+                         "to nonblocking\n");
+         return false;
+@@ -130,8 +138,8 @@
+     fprintf(stderr,
+             "vrpn_HidInterface::reconnect(): Device successfully opened.\n");
+ #endif
+-    _working = true;
+-    return _working;
++    m_working = true;
++    return m_working;
+ }
+ 
+ // Check for incoming characters.  If we get some, pass them on to the handler
+@@ -139,7 +147,7 @@
+ 
+ void vrpn_HidInterface::update()
+ {
+-    if (!_working) {
++    if (!m_working) {
+         // fprintf(stderr,"vrpn_HidInterface::update(): Interface not currently
+         // working\n");
+         return;
+@@ -152,7 +160,7 @@
+     // one report per loop cycle, we can accumulate latency.
+     int ret;
+     do {
+-        ret = hid_read(_device, inbuf, sizeof(inbuf));
++        ret = hid_read(m_device, inbuf, sizeof(inbuf));
+         if (ret < 0) {
+             fprintf(stderr, "vrpn_HidInterface::update(): Read error\n");
+ #if !defined(_WIN32) && !defined(__APPLE__)
+@@ -160,13 +168,14 @@
+                             "not having libusb-devel installed when "
+                             "configuring in CMake.)\n");
+ #endif
+-            const wchar_t *errmsg = hid_error(_device);
++            const wchar_t *errmsg = hid_error(m_device);
+             if (errmsg) {
+                 fprintf(
+                     stderr,
+                     "vrpn_HidInterface::update(): error message: %ls\n",
+                     errmsg);
+             }
++            m_working = false;
+             return;
+         }
+ 
+@@ -186,14 +195,14 @@
+ 
+ void vrpn_HidInterface::send_data(size_t bytes, const vrpn_uint8 *buffer)
+ {
+-    if (!_working) {
++    if (!m_working) {
+         fprintf(stderr, "vrpn_HidInterface::send_data(): Interface not "
+                         "currently working\n");
+         return;
+     }
+     int ret;
+-    if ((ret = hid_write(_device, const_cast<vrpn_uint8 *>(buffer), bytes)) !=
+-        bytes) {
++    if ((ret = hid_write(m_device, const_cast<vrpn_uint8 *>(buffer), bytes)) !=
++        static_cast<int>(bytes)) {
+         fprintf(stderr, "vrpn_HidInterface::send_data(): hid_interrupt_write() "
+                         "failed with code %d\n",
+                 ret);
+@@ -203,17 +212,17 @@
+ void vrpn_HidInterface::send_feature_report(size_t bytes,
+                                             const vrpn_uint8 *buffer)
+ {
+-    if (!_working) {
++    if (!m_working) {
+         fprintf(stderr, "vrpn_HidInterface::send_feature_report(): Interface "
+                         "not currently working\n");
+         return;
+     }
+ 
+-    int ret = hid_send_feature_report(_device, buffer, bytes);
++    int ret = hid_send_feature_report(m_device, buffer, bytes);
+     if (ret == -1) {
+         fprintf(stderr, "vrpn_HidInterface::send_feature_report(): failed to "
+                         "send feature report\n");
+-        const wchar_t *errmsg = hid_error(_device);
++        const wchar_t *errmsg = hid_error(m_device);
+         if (errmsg) {
+             fprintf(stderr, "vrpn_HidInterface::send_feature_report(): error "
+                             "message: %ls\n",
+@@ -228,17 +237,17 @@
+ 
+ int vrpn_HidInterface::get_feature_report(size_t bytes, vrpn_uint8 *buffer)
+ {
+-    if (!_working) {
++    if (!m_working) {
+         fprintf(stderr, "vrpn_HidInterface::get_feature_report(): Interface "
+                         "not currently working\n");
+         return -1;
+     }
+ 
+-    int ret = hid_get_feature_report(_device, buffer, bytes);
++    int ret = hid_get_feature_report(m_device, buffer, bytes);
+     if (ret == -1) {
+         fprintf(stderr, "vrpn_HidInterface::get_feature_report(): failed to "
+                         "get feature report\n");
+-        const wchar_t *errmsg = hid_error(_device);
++        const wchar_t *errmsg = hid_error(m_device);
+         if (errmsg) {
+             fprintf(
+                 stderr,
+--- a/vrpn_HumanInterface.h
++++ b/vrpn_HumanInterface.h
+@@ -67,7 +67,10 @@
+ // Main VRPN API for HID devices
+ class VRPN_API vrpn_HidInterface {
+ public:
+-    vrpn_HidInterface(vrpn_HidAcceptor *acceptor);
++    vrpn_HidInterface(vrpn_HidAcceptor *acceptor    //!< Determines which device we want
++                      , vrpn_uint16 vendor = 0      //!< Default vendor is "any"
++                      , vrpn_uint16 product = 0     //!< Default product is "any"
++                      );
+     virtual ~vrpn_HidInterface();
+ 
+     /// Returns true iff the last device I/O succeeded
+@@ -124,15 +127,26 @@
+        any longer!
+        Thus, always use "new" to make your acceptors.
+     */
+-    vrpn_HidAcceptor *_acceptor;
++    vrpn_HidAcceptor *m_acceptor;
+ 
+-    bool _working;
+-    vrpn_uint16 _vendor;
+-    vrpn_uint16 _product;
+-    int _interface;
++    bool m_working;
++    vrpn_uint16 m_vendor;
++    vrpn_uint16 m_product;
++    int m_interface;
++
++    // These are passed in the constructor and kept for use by the
++    // reconnect() method.  Strictly speaking, they are redundant
++    // because you can put an acceptor that only matches the given
++    // vendor and product ID.  However, at least one HID device on at
++    // least one server times out when repeatedly polled for its
++    // info during hid_enumerate() if we don't check for the correct
++    // vendor and product ID and ignore it, so we made this an optional
++    // setting in the constructor.
++    vrpn_uint16 m_vendor_sought;    //!< What vendor we want
++    vrpn_uint16 m_product_sought;   //!< What product we want
+ 
+ private:
+-    hid_device *_device; ///< The HID device to use.
++    hid_device *m_device; ///< The HID device to use.
+ };
+ 
+ #endif // VRPN_USE_HID
+@@ -237,12 +251,20 @@
+         , second(q)
+     {
+     }
++
++    virtual ~vrpn_HidBooleanAndAcceptor()
++    {
++        delete first;
++        delete second;
++    }
++
+     bool accept(const vrpn_HIDDEVINFO &device)
+     {
+         bool p = first->accept(device);
+         bool q = second->accept(device);
+         return p && q;
+     }
++
+     void reset()
+     {
+         first->reset();
+@@ -250,7 +272,8 @@
+     }
+ 
+ private:
+-    vrpn_HidAcceptor *first, *second;
++    vrpn_HidAcceptor *first;
++    vrpn_HidAcceptor *second;
+ };
+ 
+ /// Accepts devices meeting at least one of two criteria. NOT SHORT-CIRCUIT.
+@@ -262,12 +285,20 @@
+         , second(q)
+     {
+     }
++
++    virtual ~vrpn_HidBooleanOrAcceptor()
++    {
++        delete first;
++        delete second;
++    }
++
+     bool accept(const vrpn_HIDDEVINFO &device)
+     {
+         bool p = first->accept(device);
+         bool q = second->accept(device);
+         return p || q;
+     }
++
+     void reset()
+     {
+         first->reset();
+@@ -275,7 +306,8 @@
+     }
+ 
+ private:
+-    vrpn_HidAcceptor *first, *second;
++    vrpn_HidAcceptor *first;
++    vrpn_HidAcceptor *second;
+ };
+ 
+ /// @todo Operators for these acceptors (really predicates) ?
+--- a/vrpn_Analog_5dtUSB.C
++++ b/vrpn_Analog_5dtUSB.C
+@@ -75,7 +75,7 @@
+ }
+ 
+ vrpn_Analog_5dtUSB::~vrpn_Analog_5dtUSB() {
+-	delete _acceptor;
++	delete m_acceptor;
+ }
+ std::string vrpn_Analog_5dtUSB::get_description() const {
+ 	std::ostringstream ss;
+--- a/vrpn_Tracker_OSVRHackerDevKit.C
++++ b/vrpn_Tracker_OSVRHackerDevKit.C
+@@ -30,6 +30,11 @@
+ static const vrpn_uint16 vrpn_OSVR_ALT_VENDOR = 0x03EB;
+ static const vrpn_uint16 vrpn_OSVR_ALT_HACKER_DEV_KIT_HMD = 0x2421;
+ 
++// NOTE: Cannot use the vendor-and-product parameters in the
++// vrpn_HidInterface because there are one of two possible
++// vendor/product pairs.  The Acceptor will still correctly
++// work, it will just do more work during the enumeration phase
++// because it will have to check all devices in the system.
+ vrpn_Tracker_OSVRHackerDevKit::vrpn_Tracker_OSVRHackerDevKit(const char *name,
+                                                              vrpn_Connection *c)
+     : vrpn_Tracker(name, c)
+@@ -52,16 +57,17 @@
+ 
+ vrpn_Tracker_OSVRHackerDevKit::~vrpn_Tracker_OSVRHackerDevKit()
+ {
+-    delete _acceptor;
++    delete m_acceptor;
+ }
+ 
+ void vrpn_Tracker_OSVRHackerDevKit::on_data_received(std::size_t bytes,
+                                                      vrpn_uint8 *buffer)
+ {
+-    if (bytes != 32) {
++    if (bytes != 32 && bytes != 16) {
+         send_text_message(vrpn_TEXT_WARNING)
+             << "Received a report " << bytes
+-            << " in length, but expected it to be 32 bytes. Discarding.";
++            << " in length, but expected it to be 32 or 16 bytes. Discarding. "
++               "(May indicate issues with HID!)";
+         return;
+     }
+ 
+@@ -107,7 +113,13 @@
+     }
+     _wasConnected = connected();
+ 
++    if (!_wasConnected) {
++        m_acceptor->reset();
++        reconnect();
++    }
++
+     server_mainloop();
+ }
+ 
+ #endif
++

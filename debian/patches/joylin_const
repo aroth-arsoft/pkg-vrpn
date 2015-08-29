@@ -1,0 +1,63 @@
+--- a/vrpn_Joylin.C
++++ b/vrpn_Joylin.C
+@@ -29,9 +29,9 @@
+ #include "vrpn_Connection.h"            // for vrpn_Connection
+ #include <linux/joystick.h>             // for js_event, JSIOCGAXES, etc
+ 
+-vrpn_Joylin::vrpn_Joylin(char * name, 
++vrpn_Joylin::vrpn_Joylin(const char * name, 
+ 			 vrpn_Connection * c,
+-			 char *portname):
++			 const char *portname):
+   vrpn_Analog(name, c), vrpn_Button_Filter(name, c)
+ { 
+   namelen = 128;
+@@ -153,9 +153,9 @@
+ 
+ #else 
+ 
+-vrpn_Joylin::vrpn_Joylin(char * name, 
++vrpn_Joylin::vrpn_Joylin(const char * name, 
+ 			 vrpn_Connection * c,
+-			 char *):
++			 const char *):
+   vrpn_Analog(name, c), vrpn_Button_Filter(name, c)
+ { 
+ 	  fprintf(stderr,"vrpn_Joylin::vrpn_Joylin: Can't open Linux joystick on non-Linux machine\n");
+@@ -170,4 +170,3 @@
+ }
+ 
+ #endif
+-
+--- a/vrpn_Joylin.h
++++ b/vrpn_Joylin.h
+@@ -14,12 +14,9 @@
+ #include "vrpn_Button.h"                // for vrpn_Button_Filter
+ #include "vrpn_Configure.h"             // for VRPN_API
+ 
+-class VRPN_API vrpn_Connection;
+-
+-
+ class VRPN_API vrpn_Joylin :public vrpn_Analog, public vrpn_Button_Filter {
+ public:
+-  vrpn_Joylin(char * name, vrpn_Connection * c, char * portname);
++  vrpn_Joylin(const char * name, vrpn_Connection * c, const char * portname);
+   ~vrpn_Joylin();
+ 
+   void mainloop(void);
+@@ -27,14 +24,13 @@
+ #ifdef VRPN_USE_JOYLIN
+ protected:
+   int init();
+-#endif
+ private:
+   int namelen;
+   int fd;
+   int version;
+   char *devname;
+   char *device;
++#endif
+ };
+ 
+-
+ #endif
