@@ -1,0 +1,35 @@
+--- a/cmake/FindHIDAPI.cmake
++++ b/cmake/FindHIDAPI.cmake
+@@ -23,22 +23,26 @@
+ # (See accompanying file LICENSE_1_0.txt or copy at
+ # http://www.boost.org/LICENSE_1_0.txt)
+ 
+-find_library(HIDAPI_LIBRARY
+-	NAMES hidapi)
++find_library(HIDAPI_HIDRAW_LIBRARY
++	NAMES hidapi-hidraw)
++find_library(HIDAPI_LIBUSB_LIBRARY
++	NAMES hidapi-libusb)
+ 
+ find_path(HIDAPI_INCLUDE_DIR
+-	NAMES hidapi.h)
++	NAMES hidapi.h
++	PATH_SUFFIXES hidapi)
+ 
+ include(FindPackageHandleStandardArgs)
+ find_package_handle_standard_args(HIDAPI
+ 	DEFAULT_MSG
+-	HIDAPI_LIBRARY
++	HIDAPI_HIDRAW_LIBRARY
++	HIDAPI_LIBUSB_LIBRARY
+ 	HIDAPI_INCLUDE_DIR)
+ 
+ if(HIDAPI_FOUND)
+-	set(HIDAPI_LIBRARIES "${HIDAPI_LIBRARY}")
++	set(HIDAPI_LIBRARIES "${HIDAPI_HIDRAW_LIBRARY}" "${HIDAPI_LIBUSB_LIBRARY}")
+ 
+ 	set(HIDAPI_INCLUDE_DIRS "${HIDAPI_INCLUDE_DIR}")
+ endif()
+ 
+-mark_as_advanced(HIDAPI_INCLUDE_DIR HIDAPI_LIBRARY)
++mark_as_advanced(HIDAPI_INCLUDE_DIR HIDAPI_HIDRAW_LIBRARY HIDAPI_LIBUSB_LIBRARY)

@@ -1,3 +1,9 @@
+vrpn (7.33+dfsg-0.1~aroth~ppa1) vivid; urgency=medium
+
+  * new upstream release 7.33
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Sat, 29 Aug 2015 11:34:29 +0200
+
 vrpn (7.31+dfsg-0.4~aroth~ppa1) vivid; urgency=medium
 
   * use libudev-dev

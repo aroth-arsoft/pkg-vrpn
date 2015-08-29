@@ -1,46 +1,47 @@
 --- a/atmellib/CMakeLists.txt
 +++ b/atmellib/CMakeLists.txt
-@@ -10,7 +10,7 @@
+@@ -9,8 +9,7 @@
+ 	vrpn_atmellib_openclose.C
  	vrpn_atmellib_register.C
  	vrpn_atmellib_tester.C)
- 
+-
 -add_library(vrpn_atmel ${ATMELLIB_PUBLIC_HEADERS} ${ATMELLIB_SOURCES})
 +add_library(vrpn_atmel ${VRPN_LIBRARY_BUILD_TYPE} ${ATMELLIB_PUBLIC_HEADERS} ${ATMELLIB_SOURCES})
  set_property(TARGET
  	vrpn_atmel
  	PROPERTY
-@@ -21,6 +21,16 @@
+@@ -21,6 +20,16 @@
  	PROPERTY
  	FOLDER
  	"Library")
 +set_property(TARGET
-+    vrpn_atmel
-+    PROPERTY
-+    VERSION
-+    ${VRPN_VERSION})
++	vrpn_atmel
++	PROPERTY
++	VERSION
++	${VRPN_VERSION})
 +set_property(TARGET
-+    vrpn_atmel
-+    PROPERTY
-+    SOVERSION
-+    ${VRPN_SOVERSION})
- 
- install(TARGETS
- 	vrpn_atmel
-@@ -29,6 +39,11 @@
- 	lib
- 	COMPONENT
- 	serversdk
-+    LIBRARY
-+    DESTINATION
-+    lib
-+    COMPONENT
-+    serversdk
- 	PUBLIC_HEADER
- 	DESTINATION
- 	include
++	vrpn_atmel
++	PROPERTY
++	SOVERSION
++	${VRPN_SOVERSION})
+ if(VRPN_INSTALL)
+ 	install(TARGETS
+ 		vrpn_atmel
+@@ -28,6 +37,11 @@
+ 		DESTINATION
+ 		lib
+ 		COMPONENT
++		serversdk
++		LIBRARY
++		DESTINATION
++		lib
++		COMPONENT
+ 		serversdk
+ 		PUBLIC_HEADER
+ 		DESTINATION
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -394,7 +394,7 @@
+@@ -422,7 +422,7 @@
  
  if(VRPN_USE_LIBUSB_1_0)
  	include_directories(${LIBUSB1_INCLUDE_DIRS})
@@ -49,7 +50,7 @@
  endif()
  
  
-@@ -786,6 +786,15 @@
+@@ -872,6 +872,16 @@
  	option(VRPN_USE_SHARED_LIBRARY
  		"Enable to use DLLs on Windows (see vrpn_Configure.h for more info)"
  		OFF)
@@ -60,12 +61,13 @@
 +endif()
 +
 +if(NOT WIN32 AND VRPN_USE_SHARED_LIBRARY)
-+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -Wno-attributes")
-+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -Wno-attributes")
++    add_definitions("-Wno-attributes")
++    SET(CMAKE_C_VISIBILITY_PRESET "hidden")
++    SET(CMAKE_CXX_VISIBILITY_PRESET "hidden")
  endif()
  
  if(UNIX)
-@@ -1108,8 +1117,15 @@
+@@ -1217,8 +1227,15 @@
  set(VRPN_SERVER_LIBRARY)
  set(VRPN_CLIENT_LIBRARY)
  
@@ -81,36 +83,36 @@
  		${VRPN_SERVER_SOURCES}
  		${VRPN_SERVER_PUBLIC_HEADERS})
  	target_link_libraries(vrpnserver ${EXTRA_LIBS} ${SERVER_EXTRA_LIBS})
-@@ -1130,6 +1146,16 @@
+@@ -1244,6 +1261,16 @@
  		PROPERTY
- 		FOLDER
- 		"Library")
-+    set_property(TARGET
-+        vrpnserver
-+        PROPERTY
-+        VERSION
-+        ${VRPN_VERSION})
-+    set_property(TARGET
-+        vrpnserver
-+        PROPERTY
-+        SOVERSION
-+        ${VRPN_SOVERSION})
+ 		LINK_FLAGS
+ 		${SERVER_LINK_FLAGS})
++	set_property(TARGET
++		vrpnserver
++		PROPERTY
++		VERSION
++		${VRPN_VERSION})
++	set_property(TARGET
++		vrpnserver
++		PROPERTY
++		SOVERSION
++		${VRPN_SOVERSION})
  
  	if(UNIX)
  		add_subdirectory(atmellib)
-@@ -1146,6 +1172,11 @@
- 		lib
- 		COMPONENT
- 		serversdk
-+        LIBRARY
-+        DESTINATION
-+        lib
-+        COMPONENT
-+        serversdk
- 		PUBLIC_HEADER
- 		DESTINATION
- 		include
-@@ -1157,7 +1188,7 @@
+@@ -1260,6 +1287,11 @@
+ 			lib
+ 			COMPONENT
+ 			serversdk
++			LIBRARY
++			DESTINATION
++			lib
++			COMPONENT
++			serversdk
+ 			PUBLIC_HEADER
+ 			DESTINATION
+ 			include
+@@ -1271,7 +1303,7 @@
  
  
  if(VRPN_BUILD_CLIENT_LIBRARY)
@@ -119,49 +121,71 @@
  	target_link_libraries(vrpn ${EXTRA_LIBS})
  	set(VRPN_CLIENT_LIBRARY vrpn)
  
-@@ -1184,6 +1215,16 @@
+@@ -1298,6 +1330,16 @@
  		PROPERTY
  		FOLDER
  		"Library")
-+    set_property(TARGET
-+        vrpn
-+        PROPERTY
-+        VERSION
-+        ${VRPN_VERSION})
-+    set_property(TARGET
-+        vrpn
-+        PROPERTY
-+        SOVERSION
-+        ${VRPN_SOVERSION})
++	set_property(TARGET
++		vrpn
++		PROPERTY
++		VERSION
++		${VRPN_VERSION})
++	set_property(TARGET
++		vrpn
++		PROPERTY
++		SOVERSION
++		${VRPN_SOVERSION})
  
- 	install(TARGETS
- 		vrpn
-@@ -1192,6 +1233,11 @@
- 		lib
- 		COMPONENT
- 		clientsdk
-+        LIBRARY
-+        DESTINATION
-+        lib
-+        COMPONENT
-+        clientsdk
- 		PUBLIC_HEADER
- 		DESTINATION
- 		include
+ 	if(VRPN_INSTALL)
+ 		install(TARGETS
+@@ -1306,6 +1348,11 @@
+ 			DESTINATION
+ 			lib
+ 			COMPONENT
++			clientsdk
++			LIBRARY
++			DESTINATION
++			lib
++			COMPONENT
+ 			clientsdk
+ 			PUBLIC_HEADER
+ 			DESTINATION
 --- a/vrpn_Configure.h.cmake_in
 +++ b/vrpn_Configure.h.cmake_in
-@@ -526,8 +526,12 @@
- #endif
- #define	 VRPN_CALLBACK	 __stdcall
- #else
-+#if defined(__GNUC__) && defined(VRPN_USE_SHARED_LIBRARY)
-+#define  VRPN_API __attribute__ ((visibility ("default")))
-+#else
+@@ -498,24 +498,28 @@
+ #ifdef _MSC_VER // [
+ #ifdef VRPN_USE_WINSOCK2
+ #pragma comment(lib, "ws2_32.lib") // VRPN requires the Windows Sockets library.
+-#else
++#else // VRPN_USE_WINSOCK2
+ #pragma comment(lib,                                                           \
+                 "wsock32.lib") // VRPN requires the Windows Sockets library.
+-#endif
++#endif // VRPN_USE_WINSOCK2
+ #endif // ] _MSC_VER
+ #ifdef VRPN_USE_SHARED_LIBRARY
+ #ifdef VRPNDLL_EXPORTS
+ #define VRPN_API __declspec(dllexport)
+-#else
++#else // VRPNDLL_EXPORTS
+ #define VRPN_API __declspec(dllimport)
+-#endif
+-#else
++#endif // VRPNDLL_EXPORTS
++#else // VRPN_USE_SHARED_LIBRARY
+ #define VRPN_API
+-#endif
++#endif // VRPN_USE_SHARED_LIBRARY
+ #define VRPN_CALLBACK __stdcall
+ #else // ] WIN32 [
  // In the future, other architectures may need their own sections
- #define  VRPN_API
-+#endif
- #define  VRPN_CALLBACK
- #endif
++#if defined(__GNUC__) && defined(VRPN_USE_SHARED_LIBRARY)
++#define VRPN_API __attribute__ ((visibility ("default")))
++#else // __GNUC__
+ #define VRPN_API
++#endif // __GNUC__
+ #define VRPN_CALLBACK
+ #endif // ] not WIN32
  
 --- a/atmellib/vrpn_atmellib.h
 +++ b/atmellib/vrpn_atmellib.h
@@ -228,7 +252,7 @@
  } /* extern "C" { */
 --- a/vrpn_Shared.h
 +++ b/vrpn_Shared.h
-@@ -587,4 +587,4 @@
+@@ -610,4 +610,4 @@
  };
  
  // Returns true if they work and false if they do not.
@@ -236,15 +260,15 @@
 +VRPN_API extern bool vrpn_test_threads_and_semaphores(void);
 --- a/server_src/vrpn_Generic_server_object.h
 +++ b/server_src/vrpn_Generic_server_object.h
-@@ -13,7 +13,7 @@
+@@ -14,7 +14,7 @@
  class VRPN_API vrpn_TAF_axis;
  class VRPN_API vrpn_PA_axis;
  
--class vrpn_Generic_Server_Object
-+class VRPN_API vrpn_Generic_Server_Object
- {
-   public:
-     vrpn_Generic_Server_Object (vrpn_Connection *connection_to_use, const char *config_file_name = "vrpn.cfg", int port = vrpn_DEFAULT_LISTEN_PORT_NO, bool be_verbose = false, bool bail_on_open_error = false);
+-class vrpn_Generic_Server_Object {
++class VRPN_API vrpn_Generic_Server_Object {
+ public:
+     vrpn_Generic_Server_Object(vrpn_Connection *connection_to_use,
+                                const char *config_file_name = "vrpn.cfg",
 --- a/server_src/timecode_generator_server/CMakeLists.txt
 +++ b/server_src/timecode_generator_server/CMakeLists.txt
 @@ -8,6 +8,7 @@
@@ -270,20 +294,20 @@
 +    SOVERSION
 +    ${VRPN_SOVERSION})
  
- install(TARGETS
- 	vrpn_timecode_generator
+ if(VRPN_INSTALL)
+ 	install(TARGETS
 @@ -29,6 +40,11 @@
- 	lib
- 	COMPONENT
- 	serversdk
-+    LIBRARY
-+    DESTINATION
-+    lib
-+    COMPONENT
-+    serversdk
- 	PUBLIC_HEADER
- 	DESTINATION
- 	include
+ 		DESTINATION
+ 		lib
+ 		COMPONENT
++		serversdk
++		LIBRARY
++		DESTINATION
++		lib
++		COMPONENT
+ 		serversdk
+ 		PUBLIC_HEADER
+ 		DESTINATION
 --- a/ParseVersion.cmake
 +++ b/ParseVersion.cmake
 @@ -32,6 +32,13 @@
@@ -300,3 +324,69 @@
  option(BUILD_USE_GIT_VERSION_INFO "Use version info (tag name or SHA1) from git" OFF)
  if(BUILD_USE_GIT_VERSION_INFO)
  include(GetGitRevisionDescription)
+--- a/client_src/c_interface.h
++++ b/client_src/c_interface.h
+@@ -7,6 +7,12 @@
+  * a C interface.
+  */
+ 
++#if defined(__GNUC__)
++#define  VRPN_C_API __attribute__ ((visibility ("default")))
++#else
++#define  VRPN_C_API
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -21,16 +27,16 @@
+ /* Open a tracker device, returning an opaque pointer to it.  Returns NULL on
+  * failure, an opaque pointer to the tracker device on success.  The tracker
+  * pointer needs to be passed to the poll and close functions. */
+-void *vrpn_c_open_tracker(const char *device_name, vrpn_c_tracker_callback_function callback);
++VRPN_C_API void *vrpn_c_open_tracker(const char *device_name, vrpn_c_tracker_callback_function callback);
+ 
+ /* Poll the tracker whose device pointer is passed in.  This will cause the
+  * callback handler to be called whenever a new value comes in for
+  * a sensor.  Returns false if the device is not working. */
+-vrpn_c_bool vrpn_c_poll_tracker(void *device);
++VRPN_C_API vrpn_c_bool vrpn_c_poll_tracker(void *device);
+ 
+ /* Close the tracker whose device pointer is passed in.  Returns true on success,
+  * false on failure. */
+-vrpn_c_bool vrpn_c_close_tracker(void *device);
++VRPN_C_API vrpn_c_bool vrpn_c_close_tracker(void *device);
+ 
+ 
+ /* Function prototype for the function that will be called whenever a button
+@@ -40,16 +46,16 @@
+ /* Open a button device, returning an opaque pointer to it.  Returns NULL on
+  * failure, an opaque pointer to the button device on success.  The button
+  * device pointer needs to be passed to the read and close functions. */
+-void *vrpn_c_open_button(const char *device_name, vrpn_c_button_callback_function callback);
++VRPN_C_API void *vrpn_c_open_button(const char *device_name, vrpn_c_button_callback_function callback);
+ 
+ /* Poll the button whose device pointer is passed in.  This will cause the
+  * callback handler to be called whenever a new value comes in for
+  * a button.  Returns false if the device is not working. */
+-vrpn_c_bool vrpn_c_poll_button(void *device);
++VRPN_C_API vrpn_c_bool vrpn_c_poll_button(void *device);
+ 
+ /* Close the button whose device pointer is passed in.  Returns true on success,
+  * false on failure. */
+-vrpn_c_bool vrpn_c_close_button(void *device);
++VRPN_C_API vrpn_c_bool vrpn_c_close_button(void *device);
+ 
+ #ifdef __cplusplus
+ } /* end of extern "C" */
+--- a/server_src/timecode_generator_server/vrpn_timecode_generator.h
++++ b/server_src/timecode_generator_server/vrpn_timecode_generator.h
+@@ -6,7 +6,7 @@
+ 
+ #include "vrpn_Analog.h"
+ 
+-class vrpn_Timecode_Generator : public vrpn_Analog_Server {
++class VRPN_API vrpn_Timecode_Generator : public vrpn_Analog_Server {
+ public:
+ 	vrpn_Timecode_Generator(const char * name, vrpn_Connection * c);
+ 	virtual ~vrpn_Timecode_Generator(void);
