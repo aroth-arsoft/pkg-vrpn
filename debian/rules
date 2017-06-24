@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 %:
-	dh --buildsystem=cmake $@
+	dh $@ --buildsystem=cmake
 
 override_dh_auto_configure:
 	dh_auto_configure -O--buildsystem=cmake -- -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVRPN_USE_SHARED_LIBRARY=ON -DVRPN_USE_HID=ON -DBUILD_TESTING=OFF

@@ -1,0 +1,56 @@
+--- a/vrpn_Xkeys.h
++++ b/vrpn_Xkeys.h
+@@ -32,7 +32,7 @@
+ // Analog channel 1 is the joystick Y axis (-1 to 1).
+ // Analog channel 2 is the joystick RZ axis (-1 to 1).
+ 
+-class vrpn_Xkeys: public vrpn_BaseClass, protected vrpn_HidInterface {
++class VRPN_API vrpn_Xkeys: public vrpn_BaseClass, protected vrpn_HidInterface {
+ public:
+   vrpn_Xkeys(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c = 0, bool toggle_light = true);
+   virtual ~vrpn_Xkeys();
+@@ -56,7 +56,7 @@
+   int register_types(void) { return 0; }
+ };
+ 
+-class vrpn_Xkeys_Desktop: protected vrpn_Xkeys, public vrpn_Button_Filter {
++class VRPN_API vrpn_Xkeys_Desktop: protected vrpn_Xkeys, public vrpn_Button_Filter {
+ public:
+   vrpn_Xkeys_Desktop(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Xkeys_Desktop() {};
+@@ -72,7 +72,7 @@
+   void decodePacket(size_t bytes, vrpn_uint8 *buffer);
+ };
+ 
+-class vrpn_Xkeys_Pro: protected vrpn_Xkeys, public vrpn_Button_Filter {
++class VRPN_API vrpn_Xkeys_Pro: protected vrpn_Xkeys, public vrpn_Button_Filter {
+ public:
+   vrpn_Xkeys_Pro(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Xkeys_Pro() {};
+@@ -88,7 +88,7 @@
+   void decodePacket(size_t bytes, vrpn_uint8 *buffer);
+ };
+ 
+-class vrpn_Xkeys_Joystick: protected vrpn_Xkeys, public vrpn_Analog, public vrpn_Button_Filter {
++class VRPN_API vrpn_Xkeys_Joystick: protected vrpn_Xkeys, public vrpn_Analog, public vrpn_Button_Filter {
+ public:
+   vrpn_Xkeys_Joystick(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Xkeys_Joystick() {};
+@@ -106,7 +106,7 @@
+   void decodePacket(size_t bytes, vrpn_uint8 *buffer);
+ };
+ 
+-class vrpn_Xkeys_Jog_And_Shuttle: protected vrpn_Xkeys, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
++class VRPN_API vrpn_Xkeys_Jog_And_Shuttle: protected vrpn_Xkeys, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
+ public:
+   vrpn_Xkeys_Jog_And_Shuttle(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Xkeys_Jog_And_Shuttle() {};
+@@ -127,7 +127,7 @@
+   vrpn_uint8 _lastDial;
+ };
+ 
+-class vrpn_Xkeys_XK3: protected vrpn_Xkeys, public vrpn_Button_Filter {
++class VRPN_API vrpn_Xkeys_XK3: protected vrpn_Xkeys, public vrpn_Button_Filter {
+ public:
+   vrpn_Xkeys_XK3(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Xkeys_XK3() {};

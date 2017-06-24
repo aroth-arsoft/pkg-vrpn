@@ -1,3 +1,10 @@
+vrpn (7.33+dfsg-0.4~aroth1) yakkety; urgency=medium
+
+  * add more 3DConnextion devices
+  * add VRPN_API to XKeys
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Sat, 24 Jun 2017 07:59:32 +0200
+
 vrpn (7.33+dfsg-0.3~aroth~ppa2) vivid; urgency=medium
 
   * add Contour Shuttle Pro
