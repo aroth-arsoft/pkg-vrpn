@@ -1,0 +1,41 @@
+--- a/vrpn_Connection.C
++++ b/vrpn_Connection.C
+@@ -59,7 +59,7 @@
+ #endif
+ 
+ #ifndef VRPN_USE_WINSOCK_SOCKETS
+-#include <sys/wait.h> // for wait, wait3, WNOHANG
++#include <sys/wait.h> // for waitpid, WNOHANG
+ #ifndef __CYGWIN__
+ #include <netinet/tcp.h> // for TCP_NODELAY
+ #endif                   /* __CYGWIN__ */
+@@ -2486,11 +2486,7 @@
+         for (waitloop = 0; waitloop < (SERVCOUNT); waitloop++) {
+             int ret;
+             pid_t deadkid;
+-#if defined(sparc) || defined(FreeBSD) || defined(_AIX) || defined(__ANDROID__)
+-            int status; // doesn't exist on sparc_solaris or FreeBSD
+-#else
+-            union wait status;
+-#endif
++            int status;
+ 
+             /* Check to see if they called back yet. */
+             ret = vrpn_poll_for_accept(server_sock, &child_socket, SERVWAIT);
+@@ -2503,14 +2499,8 @@
+                 break; // Got it!
+             }
+ 
+-/* Check to see if the child is dead yet */
+-#if defined(hpux) || defined(sgi) || defined(__hpux) || defined(__CYGWIN__) || \
+-    defined(__APPLE__)
+-            /* hpux include files have the wrong declaration */
+-            deadkid = wait3((int *)&status, WNOHANG, NULL);
+-#else
+-            deadkid = wait3(&status, WNOHANG, NULL);
+-#endif
++            /* Check to see if the child is dead yet */
++            deadkid = waitpid(-1, &status, WNOHANG);
+             if (deadkid == pid) {
+                 fprintf(stderr, "vrpn_start_server: server process exited\n");
+                 vrpn_closeSocket(server_sock);

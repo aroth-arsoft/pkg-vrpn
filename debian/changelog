@@ -1,3 +1,9 @@
+vrpn (7.33+dfsg-0.5~aroth1) yakkety; urgency=medium
+
+  * use waitpid to fix compile errors
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Sat, 24 Jun 2017 09:41:04 +0200
+
 vrpn (7.33+dfsg-0.4~aroth1) yakkety; urgency=medium
 
   * add more 3DConnextion devices
