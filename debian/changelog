@@ -1,3 +1,16 @@
+vrpn (7.33+dfsg-0.6~aroth) focal; urgency=medium
+
+  * improved 3D connection device selection
+  * rebuild for latest suites
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Thu, 26 Nov 2020 07:06:44 +0100
+
+vrpn (7.33+dfsg-0.5~aroth2~18.10.1) cosmic; urgency=medium
+
+  * rebuild for active distros
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Mon, 19 Mar 2018 06:42:06 +0100
+
 vrpn (7.33+dfsg-0.5~aroth1) yakkety; urgency=medium
 
   * use waitpid to fix compile errors

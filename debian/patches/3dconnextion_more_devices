@@ -1,6 +1,6 @@
 --- a/vrpn_3DConnexion.C
 +++ b/vrpn_3DConnexion.C
-@@ -23,16 +23,23 @@
+@@ -23,23 +23,31 @@
  
  // USB vendor and product IDs for the models we support
  static const vrpn_uint16 vrpn_3DCONNEXION_VENDOR = 0x046d; //1133;	// 3Dconnexion is made by Logitech
@@ -19,7 +19,7 @@
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSE = 0xc603; // 50691
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSE_CLASSIC = 0xc606; // 50694
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEPRO = 0xc62b; // 50731
-+static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEWIRELESS_RECEIVER = 0xc62f; // 50735
++static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEWIRELESS = 0xc62f; // 50735
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEWIRELESS_CABLED= 0xc62e; // 50734
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_RECEIVER = 0xC632; // 50738
 +static const vrpn_uint16 vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_CABLED = 0xC631; // 50737
@@ -31,41 +31,111 @@
 +
  
  vrpn_3DConnexion::vrpn_3DConnexion(vrpn_HidAcceptor *filter, unsigned num_buttons,
-                                    const char *name, vrpn_Connection *c)
-@@ -335,8 +342,18 @@
- {	// 15 physical buttons are numbered: 0-2, 4-5, 8, 12-15, 22-26
+-                                   const char *name, vrpn_Connection *c)
++                                   const char *name, vrpn_Connection *c,
++                                   vrpn_uint16 vendor, vrpn_uint16 product)
+   : vrpn_Button_Filter(name, c)
+   , vrpn_Analog(name, c)
+ #if defined(VRPN_USE_HID)
+-  , vrpn_HidInterface(filter)
++  , vrpn_HidInterface(filter, vendor, product)
+ #endif
+   , _filter(filter)
+ {
+@@ -311,46 +319,57 @@
+ #endif
+ 
+ vrpn_3DConnexion_Navigator::vrpn_3DConnexion_Navigator(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR), 2, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR), 2, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR)
+ {
  }
  
+ vrpn_3DConnexion_Navigator_for_Notebooks::vrpn_3DConnexion_Navigator_for_Notebooks(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR_FOR_NOTEBOOKS), 2, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR_FOR_NOTEBOOKS), 2, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_NAVIGATOR_FOR_NOTEBOOKS)
+ {
+ }
+ 
+ vrpn_3DConnexion_Traveler::vrpn_3DConnexion_Traveler(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_TRAVELER), 8, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_TRAVELER), 8, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_TRAVELER)
+ {
+ }
+ 
+ vrpn_3DConnexion_SpaceMouse::vrpn_3DConnexion_SpaceMouse(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSE), 11, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSE), 11, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSE)
+ {
+ }
+ 
+ vrpn_3DConnexion_SpaceMousePro::vrpn_3DConnexion_SpaceMousePro(const char *name, vrpn_Connection *c)
+-: vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEPRO), 27, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEPRO), 27, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEPRO)
++{	// 15 physical buttons are numbered: 0-2, 4-5, 8, 12-15, 22-26
++}
++
 +vrpn_3DConnexion_SpaceMouseProWireless::vrpn_3DConnexion_SpaceMouseProWireless(const char *name, vrpn_Connection *c)
-+    : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_RECEIVER, vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_CABLED), 27, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_RECEIVER, vrpn_3DCONNEXION_SPACEMOUSEPROWIRELESS_CABLED), 27, name, c)
 +{	// 15 physical buttons are numbered: 0-2, 4-5, 8, 12-15, 22-26
 +}
 +
 +vrpn_3DConnexion_SpaceMouseEnterprise::vrpn_3DConnexion_SpaceMouseEnterprise(const char *name, vrpn_Connection *c)
-+    : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSE_ENTERPRISE), 27, name, c)
-+{	// 15 physical buttons are numbered: 0-2, 4-5, 8, 12-15, 22-26
-+}
-+
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSE_ENTERPRISE), 27, name, c)
+ {	// 15 physical buttons are numbered: 0-2, 4-5, 8, 12-15, 22-26
+ }
+ 
  vrpn_3DConnexion_SpaceMouseWireless::vrpn_3DConnexion_SpaceMouseWireless(const char *name, vrpn_Connection *c)
 -	: vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEWIRELESS), 2, name, c)
-+	: vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEWIRELESS_RECEIVER, vrpn_3DCONNEXION_SPACEMOUSEWIRELESS_CABLED), 2, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_SPACEMOUSEWIRELESS_VENDOR, vrpn_3DCONNEXION_SPACEMOUSEWIRELESS, vrpn_3DCONNEXION_SPACEMOUSEWIRELESS_CABLED), 2, name, c)
  {
  }
  
-@@ -351,6 +368,6 @@
++
+ vrpn_3DConnexion_SpaceExplorer::vrpn_3DConnexion_SpaceExplorer(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEEXPLORER), 15, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEEXPLORER), 15, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEEXPLORER)
+ {
+ }
+ 
+ vrpn_3DConnexion_SpaceBall5000::vrpn_3DConnexion_SpaceBall5000(const char *name, vrpn_Connection *c)
+-  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEBALL5000), 12, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEBALL5000), 12, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEBALL5000)
+ {
  }
  
  vrpn_3DConnexion_SpacePilot::vrpn_3DConnexion_SpacePilot(const char *name, vrpn_Connection *c)
 -  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEPILOT), 21, name, c)
-+  : vrpn_3DConnexion(_filter = new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEPILOT, vrpn_3DCONNEXION_SPACEPILOT_PRO), 21, name, c)
++    : vrpn_3DConnexion(new vrpn_HidProductAcceptor(vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEPILOT), 21, name, c, vrpn_3DCONNEXION_VENDOR, vrpn_3DCONNEXION_SPACEPILOT)
  {
  }
 --- a/vrpn_3DConnexion.h
 +++ b/vrpn_3DConnexion.h
-@@ -144,6 +144,22 @@
+@@ -28,7 +28,8 @@
+ class VRPN_API vrpn_3DConnexion: public vrpn_Button_Filter, public vrpn_Analog, protected vrpn_HidInterface {
+ public:
+   vrpn_3DConnexion(vrpn_HidAcceptor *filter, unsigned num_buttons,
+-                   const char *name, vrpn_Connection *c = 0);
++      const char *name, vrpn_Connection *c = 0,
++      vrpn_uint16 vendor = 0, vrpn_uint16 product = 0);
+   virtual ~vrpn_3DConnexion();
+ 
+   virtual void mainloop();
+@@ -52,7 +53,8 @@
+ class VRPN_API vrpn_3DConnexion: public vrpn_Button_Filter, public vrpn_Analog {
+ public:
+   vrpn_3DConnexion(vrpn_HidAcceptor *filter, unsigned num_buttons,
+-                   const char *name, vrpn_Connection *c = 0);
++      const char *name, vrpn_Connection *c = 0,
++      vrpn_uint16 vendor = 0, vrpn_uint16 product = 0);
+   virtual ~vrpn_3DConnexion();
+ 
+   virtual void mainloop();
+@@ -143,6 +145,22 @@
+ 
  protected:
  };
- 
++
 +class VRPN_API vrpn_3DConnexion_SpaceMouseProWireless : public vrpn_3DConnexion {
 +public:
 +    vrpn_3DConnexion_SpaceMouseProWireless(const char *name, vrpn_Connection *c = 0);
@@ -81,10 +151,9 @@
 +
 +protected:
 +};
-+
+ 
  class VRPN_API vrpn_3DConnexion_SpaceExplorer : public vrpn_3DConnexion {
  public:
-   vrpn_3DConnexion_SpaceExplorer(const char *name, vrpn_Connection *c = 0);
 --- a/vrpn_HumanInterface.h
 +++ b/vrpn_HumanInterface.h
 @@ -165,16 +165,24 @@
