@@ -1,0 +1,20 @@
+--- a/vrpn_Griffin.h
++++ b/vrpn_Griffin.h
+@@ -22,7 +22,7 @@
+ // Button 0 is the programming switch; it is set if the switch is in the "red" position.
+ //
+ 
+-class vrpn_Griffin: public vrpn_BaseClass, protected vrpn_HidInterface {
++class VRPN_API vrpn_Griffin: public vrpn_BaseClass, protected vrpn_HidInterface {
+ public:
+   vrpn_Griffin(vrpn_HidAcceptor *filter, const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Griffin(void);
+@@ -45,7 +45,7 @@
+   int register_types(void) { return 0; }
+ };
+ 
+-class vrpn_Griffin_PowerMate: protected vrpn_Griffin, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
++class VRPN_API vrpn_Griffin_PowerMate: protected vrpn_Griffin, public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Dial {
+ public:
+   vrpn_Griffin_PowerMate(const char *name, vrpn_Connection *c = 0);
+   virtual ~vrpn_Griffin_PowerMate(void) {};

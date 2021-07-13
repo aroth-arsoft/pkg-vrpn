@@ -1,3 +1,9 @@
+vrpn (7.33+dfsg-0.7~aroth1) UNRELEASED; urgency=medium
+
+  * add export for vrpn_Griffin
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Tue, 13 Jul 2021 09:05:44 +0200
+
 vrpn (7.33+dfsg-0.6~aroth) focal; urgency=medium
 
   * improved 3D connection device selection
